@@ -1,0 +1,55 @@
+# CRAFT-DF Default Configuration
+
+# Model architecture configuration
+model:
+  spatial_backbone: "mobilenet_v2"
+  spatial_pretrained: true
+  spatial_freeze_layers: 10
+  freq_dwt_levels: 3
+  freq_wavelet: "db4"
+  attention_heads: 8
+  attention_dim: 512
+  dropout_rate: 0.1
+
+# Training configuration
+training:
+  learning_rate: 1e-4
+  batch_size: 32
+  max_epochs: 100
+  num_workers: 4
+  pin_memory: true
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  precision: 16  # Mixed precision for H100 optimization
+  
+# Data processing configuration
+data:
+  input_size: [224, 224]
+  dwt_levels: 3
+  wavelet_type: "db4"
+  face_confidence_threshold: 0.5
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+
+# Logging and experiment tracking
+logging:
+  project_name: "craft-df"
+  experiment_name: "default"
+  log_every_n_steps: 50
+  save_top_k: 3
+  monitor: "val_accuracy"
+  mode: "max"
+
+# Reproducibility settings
+reproducibility:
+  seed: 42
+  deterministic: true
+  benchmark: false
+
+# Hardware optimization
+hardware:
+  accelerator: "gpu"
+  devices: 1
+  strategy: "auto"
+  sync_batchnorm: false
