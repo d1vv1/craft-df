@@ -209,3 +209,61 @@ def load_default_config() -> DictConfig:
         
         config_manager.save_config(default_config, default_config_path)
         return OmegaConf.create(default_config)
+
+
+def load_config(config_path: Union[str, Path]) -> Dict[str, Any]:
+    """
+    Load configuration from YAML file.
+    
+    Args:
+        config_path: Path to configuration file
+        
+    Returns:
+        Dictionary containing configuration
+    """
+    config_manager = ConfigManager()
+    config = config_manager.load_config(config_path)
+    return OmegaConf.to_container(config, resolve=True)
+
+
+def validate_config(config: Dict[str, Any]) -> None:
+    """
+    Validate configuration structure and required fields.
+    
+    Args:
+        config: Configuration dictionary to validate
+        
+    Raises:
+        ValueError: If configuration is invalid
+    """
+    required_sections = ['model', 'training', 'data', 'reproducibility']
+    
+    for section in required_sections:
+        if section not in config:
+            raise ValueError(f"Missing required configuration section: {section}")
+    
+    # Validate model section
+    model_config = config['model']
+    required_model_fields = ['spatial_backbone', 'attention_heads', 'attention_dim']
+    for field in required_model_fields:
+        if field not in model_config:
+            raise ValueError(f"Missing required model field: {field}")
+    
+    # Validate training section
+    training_config = config['training']
+    required_training_fields = ['learning_rate', 'batch_size', 'max_epochs']
+    for field in required_training_fields:
+        if field not in training_config:
+            raise ValueError(f"Missing required training field: {field}")
+    
+    # Validate data section
+    data_config = config['data']
+    required_data_fields = ['input_size']
+    for field in required_data_fields:
+        if field not in data_config:
+            raise ValueError(f"Missing required data field: {field}")
+    
+    # Validate reproducibility section
+    repro_config = config['reproducibility']
+    if 'seed' not in repro_config:
+        raise ValueError("Missing required reproducibility field: seed")
