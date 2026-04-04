@@ -77,3 +77,6 @@ htmlcov/
 # Configuration overrides
 configs/local.yaml
 configs/experiment_*.yaml
+
+# Kiro
+.kiro/
