@@ -1,0 +1,44 @@
+# CRAFT-DF Data Preparation Configuration Template
+# This file contains all configurable parameters for the data preparation pipeline
+
+# Required Parameters - Must be specified
+input_dir: ./input_videos              # Directory containing input video files
+output_dir: ./processed_data           # Directory for processed outputs  
+metadata_path: ./metadata.csv          # Path for metadata CSV file
+
+# Processing Parameters
+max_faces_per_frame: 1                 # Maximum number of faces to extract per frame
+frame_skip: 1                          # Process every Nth frame (1 = all frames)
+max_frames_per_video: null             # Maximum frames per video (null = unlimited)
+save_intermediate: true                # Save intermediate results for recovery
+progress_bar: true                     # Show progress bar during processing
+
+# Face Detector Configuration
+face_detector:
+  min_detection_confidence: 0.7        # Minimum confidence for face detection (0.0-1.0)
+  model_selection: 0                   # Model selection (0 = short-range, 1 = full-range)
+  target_size: [224, 224]              # Target size for face crops [height, width]
+
+# DWT Processor Configuration  
+dwt_processor:
+  wavelet: db4                         # Wavelet type (db4, db8, haar, etc.)
+  levels: 3                            # Number of decomposition levels (1-6)
+  mode: symmetric                      # Boundary condition mode
+
+# Video File Extensions
+video_extensions:
+  - .mp4
+  - .avi
+  - .mov
+  - .mkv
+  - .wmv
+  - .flv
+  - .webm
+
+# Logging Configuration
+logging:
+  level: INFO                          # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  log_file: null                       # Log file path (null = console only)
+
+# Resume Processing
+resume: false                          # Resume from interrupted processing
