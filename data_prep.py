@@ -205,7 +205,8 @@ def create_default_config() -> Dict[str, Any]:
         },
         
         # Video file extensions
-        'video_extensions': ['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm'],
+        'video_extensions': ['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm',
+                             '.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp'],
         
         # Logging configuration
         'logging': {

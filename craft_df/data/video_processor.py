@@ -141,6 +141,61 @@ class VideoProcessor:
         
         logger.info(f"Found {len(video_files)} video files")
         return sorted(video_files)
+
+    def get_image_files(self, extensions: List[str] = None) -> List[Path]:
+        """
+        Get list of image files from input directory.
+
+        Args:
+            extensions: List of image file extensions to include
+
+        Returns:
+            List of image file paths
+        """
+        if extensions is None:
+            extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp']
+
+        image_files = []
+        for ext in extensions:
+            image_files.extend(self.input_dir.glob(f"**/*{ext}"))
+            image_files.extend(self.input_dir.glob(f"**/*{ext.upper()}"))
+
+        logger.info(f"Found {len(image_files)} image files")
+        return sorted(image_files)
+
+    def process_image(self, image_path: Path) -> List[Dict[str, Any]]:
+        """
+        Process a single image file — same pipeline as one video frame.
+
+        Args:
+            image_path: Path to image file
+
+        Returns:
+            List of metadata dictionaries for extracted faces
+        """
+        try:
+            label    = self.extract_label_from_path(image_path)
+            video_id = image_path.stem          # treat each image as its own "video"
+
+            label_dir = self.output_dir / label / video_id
+            label_dir.mkdir(parents=True, exist_ok=True)
+
+            frame = cv2.imread(str(image_path))
+            if frame is None:
+                raise RuntimeError(f"Cannot read image: {image_path}")
+
+            metadata_records = self._process_frame(
+                frame, video_id, label, frame_number=0, output_dir=label_dir
+            )
+
+            self.stats['videos_processed'] += 1
+            self.stats['frames_processed'] += 1
+            return metadata_records
+
+        except Exception as e:
+            logger.error(f"Image processing failed for {image_path}: {str(e)}")
+            self.stats['errors'] += 1
+            raise RuntimeError(f"Image processing failed: {str(e)}")
     
     def extract_label_from_path(self, video_path: Path) -> str:
         """
@@ -377,22 +432,32 @@ class VideoProcessor:
             # Get video files to process
             if video_paths is None:
                 video_paths = self.get_video_files()
+
+            # If no videos found, fall back to images
+            if not video_paths:
+                logger.info("No video files found, looking for images instead...")
+                video_paths = self.get_image_files()
             
             if not video_paths:
-                logger.warning("No video files found to process")
+                logger.warning("No video or image files found to process")
                 return pd.DataFrame()
             
-            logger.info(f"Starting batch processing of {len(video_paths)} videos")
+            logger.info(f"Starting batch processing of {len(video_paths)} files")
             
             all_metadata = []
             
             # Process videos with optional progress bar
-            iterator = tqdm(video_paths, desc="Processing videos") if progress_bar else video_paths
+            iterator = tqdm(video_paths, desc="Processing files") if progress_bar else video_paths
             
+            IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp'}
+
             for video_path in iterator:
                 try:
-                    video_metadata = self.process_video(video_path)
-                    all_metadata.extend(video_metadata)
+                    if video_path.suffix.lower() in IMAGE_EXTS:
+                        file_metadata = self.process_image(video_path)
+                    else:
+                        file_metadata = self.process_video(video_path)
+                    all_metadata.extend(file_metadata)
                     
                     # Save intermediate results for recovery
                     if save_intermediate and all_metadata:
