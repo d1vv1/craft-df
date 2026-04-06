@@ -78,3 +78,6 @@ htmlcov/
 configs/local.yaml
 configs/experiment_*.yaml
 
+# External training scripts
+colab_training.ipynb
+colab_training.py

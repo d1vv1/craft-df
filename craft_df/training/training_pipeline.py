@@ -49,7 +49,7 @@ from ..data.dataset import HierarchicalDeepfakeDataset
 from ..data.transforms import get_transforms
 from ..utils.config import load_config, validate_config
 from ..utils.reproducibility import seed_everything
-from .performance_monitor import PerformanceCallback, GPUOptimizer, DistributedTrainingOptimizer
+from .performance_monitor import PerformanceCallback, PerformanceMonitor, GPUOptimizer, DistributedTrainingOptimizer
 
 logger = logging.getLogger(__name__)
 
