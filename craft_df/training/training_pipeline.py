@@ -3,7 +3,7 @@ CRAFT-DF Training Pipeline
 
 This module implements a comprehensive training pipeline for the CRAFT-DF model
 with experiment tracking, automatic checkpointing, and proper data management.
-The pipeline integrates Weights & Biases for experiment tracking and provides
+The pipeline integrates Weights & Biases for experiment tracking and providesPer
 robust training capabilities with GPU optimization.
 
 Key Features:
