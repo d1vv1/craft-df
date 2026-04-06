@@ -25,7 +25,11 @@ import json
 import time
 from datetime import datetime
 import psutil
-import GPUtil
+try:
+    import GPUtil
+    _GPUTIL_AVAILABLE = True
+except ImportError:
+    _GPUTIL_AVAILABLE = False
 
 import torch
 import torch.nn as nn
@@ -694,7 +698,7 @@ class TrainingPipeline:
             logger.info(f"GPU count: {torch.cuda.device_count()}")
             
             try:
-                gpus = GPUtil.getGPUs()
+                gpus = GPUtil.getGPUs() if _GPUTIL_AVAILABLE else []
                 for i, gpu in enumerate(gpus):
                     logger.info(f"GPU {i}: {gpu.name} ({gpu.memoryTotal}MB)")
             except:
