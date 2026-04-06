@@ -78,5 +78,3 @@ htmlcov/
 configs/local.yaml
 configs/experiment_*.yaml
 
-# Kiro
-.kiro/
