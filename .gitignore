@@ -28,7 +28,7 @@ checkpoints/
 lightning_logs/
 
 # Data
-data/
+/data/
 datasets/
 *.npy
 *.h5
