@@ -33,6 +33,7 @@ datasets/
 *.npy
 *.h5
 *.hdf5
+gdrive_upload/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -81,3 +82,4 @@ configs/experiment_*.yaml
 # External training scripts
 colab_training.ipynb
 colab_training.py
+local_training_setup.py

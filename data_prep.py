@@ -141,6 +141,8 @@ def validate_config(config: Dict[str, Any]) -> None:
     for param, (min_val, max_val) in numeric_params.items():
         if param in config:
             value = config[param]
+            if value is None:
+                continue  # None means "unlimited" / not set — skip validation
             if not isinstance(value, int) or value < min_val:
                 raise ValueError(f"{param} must be an integer >= {min_val}")
             if max_val is not None and value > max_val:
@@ -367,7 +369,11 @@ def process_videos(config: Dict[str, Any]) -> None:
         video_files = processor.get_video_files(extensions=video_extensions)
         
         if not video_files:
-            logger.warning("No video files found to process")
+            logger.info("No video files found, scanning for images...")
+            video_files = processor.get_image_files()
+
+        if not video_files:
+            logger.warning("No video or image files found to process")
             return
         
         logger.info(f"Found {len(video_files)} video files to process")

@@ -5,7 +5,6 @@ torchvision>=0.15.0
 
 # Computer vision and image processing
 opencv-python>=4.8.0
-mediapipe>=0.10.0
 
 # Signal processing
 PyWavelets>=1.4.0
@@ -18,6 +17,7 @@ pandas>=2.0.0
 # Configuration management
 PyYAML>=6.0
 omegaconf>=2.3.0
+python-dotenv>=1.0.0
 
 # Experiment tracking and visualization
 wandb>=0.15.0
@@ -38,3 +38,4 @@ psutil>=5.9.0
 # Data handling
 h5py>=3.9.0
 pillow>=10.0.0
+kaggle>=1.5.0

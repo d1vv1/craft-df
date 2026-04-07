@@ -96,7 +96,6 @@ def test_requirements_file():
         "torch",
         "pytorch-lightning", 
         "opencv-python",
-        "mediapipe",
         "PyWavelets",
         "scikit-learn",
         "PyYAML"
