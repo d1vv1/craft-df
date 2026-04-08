@@ -74,6 +74,10 @@ wandb/
 .pytest_cache/
 .tox/
 htmlcov/
+test_data_temp/
+profiling/
+results/
+final_performance_metrics.json
 
 # Configuration overrides
 configs/local.yaml
