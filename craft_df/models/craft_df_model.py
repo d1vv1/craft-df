@@ -172,8 +172,8 @@ class CRAFTDFModel(pl.LightningModule):
             self.val_accuracy = None
             self.test_accuracy = None
         
-        # Training state
-        self.automatic_optimization = False  # Manual optimization for adversarial training
+        # Training state — manual optimization only needed for adversarial training
+        self.automatic_optimization = not adversarial_training
         
         logger.info(f"CRAFTDFModel initialized with adversarial_training={adversarial_training}")
     
@@ -245,6 +245,10 @@ class CRAFTDFModel(pl.LightningModule):
             # Extract spatial features
             spatial_features = self.spatial_stream(spatial_input)
             # Shape: (batch_size, spatial_dim)
+            
+            # If frequency_input is a raw image tensor, compute DWT coefficients
+            if not isinstance(frequency_input, dict):
+                frequency_input = self._compute_dwt_coefficients(frequency_input)
             
             # Extract frequency features
             frequency_features = self.frequency_stream(frequency_input)
@@ -675,6 +679,53 @@ class CRAFTDFModel(pl.LightningModule):
             'labels': labels
         }
     
+    def _compute_dwt_coefficients(self, images: torch.Tensor) -> dict:
+        """
+        Compute multi-level DWT coefficients from raw image tensors using PyWavelets.
+
+        Args:
+            images: (B, C, H, W) float tensor in [0, 1]
+
+        Returns:
+            Dict with keys 'll', 'lh_1', 'hl_1', 'hh_1', ..., 'lh_N', 'hl_N', 'hh_N'
+        """
+        import pywt
+        import numpy as np
+
+        dwt_levels = self.frequency_stream.dwt_levels
+        device = images.device
+        B, C, H, W = images.shape
+
+        coeffs_dict: dict = {}
+        imgs_np = images.detach().cpu().numpy()  # (B, C, H, W)
+
+        ll_list = []
+        detail_lists: dict = {f"{s}_{l}": [] for l in range(1, dwt_levels + 1)
+                               for s in ['lh', 'hl', 'hh']}
+
+        for b in range(B):
+            per_channel_coeffs = []
+            for c in range(C):
+                coeffs = pywt.wavedec2(imgs_np[b, c], wavelet='db4',
+                                       level=dwt_levels, mode='symmetric')
+                per_channel_coeffs.append(coeffs)
+
+            # LL: deepest approximation — shape (H', W')
+            ll = np.stack([per_channel_coeffs[c][0] for c in range(C)], axis=0)  # (C, H', W')
+            ll_list.append(ll)
+
+            for level in range(1, dwt_levels + 1):
+                lh, hl, hh = zip(*[per_channel_coeffs[c][level] for c in range(C)])
+                detail_lists[f'lh_{level}'].append(np.stack(lh, axis=0))
+                detail_lists[f'hl_{level}'].append(np.stack(hl, axis=0))
+                detail_lists[f'hh_{level}'].append(np.stack(hh, axis=0))
+
+        coeffs_dict['ll'] = torch.from_numpy(np.stack(ll_list, axis=0)).float().to(device)
+        for key, arrays in detail_lists.items():
+            coeffs_dict[key] = torch.from_numpy(np.stack(arrays, axis=0)).float().to(device)
+
+        return coeffs_dict
+
     def configure_optimizers(self) -> Dict[str, Any]:
         """
         Configure optimizers and learning rate schedulers with comprehensive setup.
@@ -793,17 +844,18 @@ class CRAFTDFModel(pl.LightningModule):
                     'name': 'domain_lr'
                 })
         
-        # Configure optimization strategy
+        # Configure optimization strategy — return format depends on optimizer count
+        if not self.adversarial_training:
+            # Single optimizer: return clean dict PL expects
+            if schedulers:
+                return {'optimizer': main_optimizer, 'lr_scheduler': schedulers[0]}
+            return main_optimizer
+
+        # Multiple optimizers (adversarial): return lists
         config = {
             'optimizer': optimizers,
             'lr_scheduler': schedulers
         }
-        
-        # Add gradient clipping if not using manual optimization
-        if not self.adversarial_training:
-            # For automatic optimization, configure gradient clipping
-            # This will be handled by the trainer
-            pass
         
         logger.info(f"Configured {len(optimizers)} optimizers and {len(schedulers)} schedulers")
         logger.info(f"Main optimizer: AdamW(lr={self.learning_rate}, weight_decay={self.weight_decay})")
