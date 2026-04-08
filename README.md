@@ -54,6 +54,15 @@ chmod +x activate_env.sh
 ./activate_env.sh
 ```
 
+### Environment Variables
+
+Before starting data ingestion or tracking workloads, you need to establish your environment secrets:
+
+```bash
+cp .env.example .env
+```
+Edit the `.env` file to include your **Kaggle** credentials (if downloading datasets automatically) and your **Weights & Biases** API key.
+
 ### Verify Installation
 
 ```bash
@@ -129,11 +138,22 @@ input_videos/
 
 ### Running Data Preparation
 
+The most efficient baseline to prepare and load data dynamically from Kaggle is via the included automation script. Make sure your `.env` contains valid Kaggle credentials:
+
+```bash
+# Automated dataset pipeline (fetches data, creates embeddings, builds CSV index)
+python local_training/prepare_for_training.py
+```
+*Note: This generates a final `processed_dataset/` directory holding your arrays ready for training.*
+
+**Manual Processing**
+If you already have your own independent deepfake MP4 datasets:
+
 ```bash
 # Basic data preparation
 python data_prep.py \
     --input_dir ./input_videos \
-    --output_dir ./processed_data \
+    --output_dir ./processed_dataset \
     --metadata_path ./metadata.csv
 
 # With custom configuration
@@ -142,7 +162,7 @@ python data_prep.py --config config_template.yaml
 # Resume interrupted processing
 python data_prep.py \
     --input_dir ./input_videos \
-    --output_dir ./processed_data \
+    --output_dir ./processed_dataset \
     --metadata_path ./metadata.csv \
     --resume
 ```
