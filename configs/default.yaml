@@ -38,7 +38,7 @@ logging:
   experiment_name: "default"
   log_every_n_steps: 50
   save_top_k: 3
-  monitor: "val_accuracy"
+  monitor: "val/accuracy"
   mode: "max"
 
 # Reproducibility settings

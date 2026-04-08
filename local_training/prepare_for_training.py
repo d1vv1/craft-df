@@ -230,7 +230,7 @@ def generate_colab_config(log: logging.Logger) -> None:
             "experiment_name":  "colab-run-1",
             "log_every_n_steps": 10,
             "save_top_k":        3,
-            "monitor":           "val_accuracy",
+            "monitor":           "val/accuracy",
             "mode":              "max",
         },
         "reproducibility": {
