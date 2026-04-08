@@ -11,7 +11,7 @@ Runs all pre-training steps locally:
   6. Packaging output for Google Drive upload
 
 Output layout (everything you need to upload):
-  gdrive_upload/
+  processed_dataset/
   ├── processed_data/          ← face crops + DWT .npy files
   ├── metadata.csv             ← dataset index for training
   ├── configs/colab.yaml       ← training config (paths already set for Colab)
@@ -38,10 +38,10 @@ from dotenv import load_dotenv
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-PROJECT_ROOT   = Path(__file__).parent.resolve()
+PROJECT_ROOT   = Path(__file__).parent.parent.resolve()
 RAW_DATA_DIR   = PROJECT_ROOT / "data" / "raw"          # kaggle download target
 IMAGES_DIR     = PROJECT_ROOT / "data" / "images"       # organised real/fake
-GDRIVE_DIR     = PROJECT_ROOT / "gdrive_upload"         # final upload bundle
+GDRIVE_DIR     = PROJECT_ROOT / "processed_dataset"         # final upload bundle
 PROCESSED_DIR  = GDRIVE_DIR  / "processed_data"
 METADATA_CSV   = GDRIVE_DIR  / "metadata.csv"
 CONFIGS_DIR    = GDRIVE_DIR  / "configs"

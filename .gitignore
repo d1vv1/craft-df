@@ -33,7 +33,8 @@ datasets/
 *.npy
 *.h5
 *.hdf5
-gdrive_upload/
+processed_dataset/
+torch_profiler_*.json
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -51,6 +52,7 @@ craft_df_env/
 # IDE
 .vscode/
 .idea/
+.kiro/
 *.swp
 *.swo
 *~

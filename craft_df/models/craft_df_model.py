@@ -397,7 +397,7 @@ class CRAFTDFModel(pl.LightningModule):
             self.manual_backward(total_loss)
             
             # Gradient clipping for training stability
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
+            self.clip_gradients(opt_main, gradient_clip_val=1.0, gradient_clip_algorithm="norm")
             
             opt_main.step()
             
@@ -852,18 +852,13 @@ class CRAFTDFModel(pl.LightningModule):
             return main_optimizer
 
         # Multiple optimizers (adversarial): return lists
-        config = {
-            'optimizer': optimizers,
-            'lr_scheduler': schedulers
-        }
-        
         logger.info(f"Configured {len(optimizers)} optimizers and {len(schedulers)} schedulers")
         logger.info(f"Main optimizer: AdamW(lr={self.learning_rate}, weight_decay={self.weight_decay})")
         if len(optimizers) > 1:
             logger.info(f"Domain optimizer: Adam(lr={self.learning_rate * 0.1})")
         logger.info(f"Scheduler type: {self.scheduler_type}")
         
-        return config
+        return optimizers, schedulers
     
     def predict_step(
         self,

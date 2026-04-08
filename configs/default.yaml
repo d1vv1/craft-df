@@ -13,7 +13,7 @@ model:
 
 # Training configuration
 training:
-  learning_rate: 1e-4
+  learning_rate: 0.0001
   batch_size: 32
   max_epochs: 100
   num_workers: 4
@@ -31,7 +31,8 @@ data:
   train_split: 0.7
   val_split: 0.15
   test_split: 0.15
-
+  metadata_path: "processed_dataset/metadata.csv"
+  data_root: "processed_dataset/processed_data"
 # Logging and experiment tracking
 logging:
   project_name: "craft-df"

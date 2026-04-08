@@ -52,8 +52,8 @@ class ConfigManager:
         """
         config_path = Path(config_path)
         
-        # Handle relative paths
-        if not config_path.is_absolute():
+        # Handle relative paths check if the path exists directly relative to cwd
+        if not config_path.is_absolute() and not config_path.exists():
             config_path = self.config_dir / config_path
         
         if not config_path.exists():
@@ -86,8 +86,8 @@ class ConfigManager:
         """
         config_path = Path(config_path)
         
-        # Handle relative paths
-        if not config_path.is_absolute():
+        # Handle relative paths: skip prepend if parent dir already resolves correctly from cwd
+        if not config_path.is_absolute() and not config_path.parent.exists():
             config_path = self.config_dir / config_path
         
         # Ensure parent directory exists

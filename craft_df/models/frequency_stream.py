@@ -187,7 +187,11 @@ class DWTLayer(nn.Module):
             else:
                 ll_features = self.ll_conv(ll_coeff)
             
-            ll_features = self.adaptive_pool(ll_features)
+            # MPS workaround: adaptive pooling with non-divisible sizes crashes on MPS
+            if ll_features.device.type == 'mps':
+                ll_features = self.adaptive_pool(ll_features.cpu()).to('mps')
+            else:
+                ll_features = self.adaptive_pool(ll_features)
             ll_features = ll_features.view(batch_size, -1)
             
             # Process detail coefficients from all levels with batch processing
@@ -227,7 +231,11 @@ class DWTLayer(nn.Module):
                 else:
                     detail_feat = self.detail_conv(detail_coeff)
                 
-                detail_feat = self.adaptive_pool(detail_feat)
+                # MPS workaround: adaptive pooling with non-divisible sizes crashes on MPS
+                if detail_feat.device.type == 'mps':
+                    detail_feat = self.adaptive_pool(detail_feat.cpu()).to('mps')
+                else:
+                    detail_feat = self.adaptive_pool(detail_feat)
                 detail_feat = detail_feat.view(batch_size, -1)
                 detail_features_list.append(detail_feat)
             

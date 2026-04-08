@@ -249,12 +249,20 @@ class TrainingPipeline:
         val_dataset.dataset.transform = val_transform
         test_dataset.dataset.transform = val_transform
         
+        # Ensure compatibility with macOS MPS dataloader bugs
+        num_workers = training_config.get('num_workers', 4)
+        pin_memory = training_config.get('pin_memory', True)
+        if getattr(torch.backends, 'mps', None) and getattr(torch.backends.mps, 'is_available', lambda: False)():
+            logger.warning("MPS detected: forcibly setting num_workers=0 and pin_memory=False to prevent DataLoader crashes on MacOS.")
+            num_workers = 0
+            pin_memory = False
+            
         # Create data loaders
         common_loader_args = {
             'batch_size': training_config['batch_size'],
-            'num_workers': training_config.get('num_workers', 4),
-            'pin_memory': training_config.get('pin_memory', True),
-            'persistent_workers': training_config.get('num_workers', 4) > 0,
+            'num_workers': num_workers,
+            'pin_memory': pin_memory,
+            'persistent_workers': num_workers > 0,
             'collate_fn': self._collate_fn  # Custom collate to convert tuple to dict
         }
         
@@ -430,14 +438,28 @@ class TrainingPipeline:
         
         # Setup logger
         if not self.offline_mode:
-            self.logger_instance = WandbLogger(
-                project=self.project_name,
-                name=self.experiment_name,
-                save_dir='./logs',
-                log_model=True,
-                config=self.config
-            )
-        else:
+            import os
+            try:
+                import wandb
+                # Fallback to offline if no API key is provided
+                if wandb.api.api.api_key is None and 'WANDB_API_KEY' not in os.environ:
+                    logger.warning("No WandB API key configured. Switching to offline mode gracefully.")
+                    self.offline_mode = True
+                    self.logger_instance = None
+                else:
+                    self.logger_instance = WandbLogger(
+                        project=self.project_name,
+                        name=self.experiment_name,
+                        save_dir='./logs',
+                        log_model=True,
+                        config=self.config
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to initialize WandB: {e}. Switching to offline mode.")
+                self.offline_mode = True
+                self.logger_instance = None
+        
+        if self.offline_mode:
             self.logger_instance = None
             logger.info("Running in offline mode - W&B logging disabled")
         
@@ -506,6 +528,10 @@ class TrainingPipeline:
                 if compression_hook:
                     logger.info("Enabled gradient compression for distributed training")
         
+        # Cannot supply gradient_clip_val during manual optimization in PL 2.0+
+        if hasattr(self, 'model') and self.model is not None and not getattr(self.model, 'automatic_optimization', True):
+            trainer_args.pop('gradient_clip_val', None)
+            
         # Initialize trainer
         self.trainer = pl.Trainer(**trainer_args)
         

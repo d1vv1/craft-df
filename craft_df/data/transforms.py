@@ -262,6 +262,19 @@ def create_val_transforms(normalize_spatial: bool = True) -> Tuple[Callable, Cal
     return val_transforms.spatial_transform_fn, val_transforms.frequency_transform_fn
 
 
+class CombinedTransform:
+    def __init__(self, spatial_transform, freq_transform):
+        self.spatial_transform = spatial_transform
+        self.freq_transform = freq_transform
+
+    def __call__(self, sample):
+        spatial_data, freq_data, label = sample
+        if self.spatial_transform:
+            spatial_data = self.spatial_transform(spatial_data)
+        if self.freq_transform:
+            freq_data = self.freq_transform(freq_data)
+        return spatial_data, freq_data, label
+
 def get_transforms(
     input_size: Tuple[int, int] = (224, 224),
     augmentation: bool = True,
@@ -289,21 +302,4 @@ def get_transforms(
     
     val_spatial, val_freq = create_val_transforms()
     
-    # Combine spatial and frequency transforms
-    def combined_train_transform(sample):
-        spatial_data, freq_data, label = sample
-        if train_spatial:
-            spatial_data = train_spatial(spatial_data)
-        if train_freq:
-            freq_data = train_freq(freq_data)
-        return spatial_data, freq_data, label
-    
-    def combined_val_transform(sample):
-        spatial_data, freq_data, label = sample
-        if val_spatial:
-            spatial_data = val_spatial(spatial_data)
-        if val_freq:
-            freq_data = val_freq(freq_data)
-        return spatial_data, freq_data, label
-    
-    return combined_train_transform, combined_val_transform
+    return CombinedTransform(train_spatial, train_freq), CombinedTransform(val_spatial, val_freq)
