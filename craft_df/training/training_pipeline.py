@@ -180,6 +180,21 @@ class TrainingPipeline:
         
         logger.info("Logging configuration completed")
     
+    def _collate_fn(self, batch):
+        """Convert list of (spatial, freq, label) tuples into a dict batch.
+        
+        The model's FrequencyStream has its own DWTLayer, so it expects raw
+        image tensors (B, C, H, W), not pre-extracted DWT feature vectors.
+        We pass the spatial image as the frequency input as well.
+        """
+        spatial = torch.stack([item[0] for item in batch])
+        labels  = torch.tensor([item[2] for item in batch], dtype=torch.long)
+        return {
+            'spatial_input':   spatial,
+            'frequency_input': spatial,  # Model runs its own DWT internally
+            'labels':          labels,
+        }
+
     def setup_data_loaders(self) -> Tuple[DataLoader, DataLoader, DataLoader]:
         """
         Setup train, validation, and test data loaders.
@@ -207,6 +222,7 @@ class TrainingPipeline:
         # Create datasets
         full_dataset = HierarchicalDeepfakeDataset(
             metadata_path=dataset_path,
+            data_root=data_config.get('data_root', None),
             transform=None,  # Will apply transforms in data loaders
             validate_files=not self.debug_mode,  # Skip validation in debug mode
             cache_size=data_config.get('cache_size', 1000),
@@ -238,7 +254,8 @@ class TrainingPipeline:
             'batch_size': training_config['batch_size'],
             'num_workers': training_config.get('num_workers', 4),
             'pin_memory': training_config.get('pin_memory', True),
-            'persistent_workers': training_config.get('num_workers', 4) > 0
+            'persistent_workers': training_config.get('num_workers', 4) > 0,
+            'collate_fn': self._collate_fn  # Custom collate to convert tuple to dict
         }
         
         # Optimize batch size for distributed training
@@ -504,8 +521,8 @@ class TrainingPipeline:
         # Model checkpointing
         checkpoint_callback = ModelCheckpoint(
             dirpath=f'./checkpoints/{self.experiment_name}',
-            filename='{epoch:02d}-{val_accuracy:.3f}',
-            monitor=self.config['logging'].get('monitor', 'val_accuracy'),
+            filename='{epoch:02d}-{val/accuracy:.3f}',
+            monitor=self.config['logging'].get('monitor', 'val/accuracy'),
             mode=self.config['logging'].get('mode', 'max'),
             save_top_k=self.config['logging'].get('save_top_k', 3),
             save_last=True,
@@ -517,7 +534,7 @@ class TrainingPipeline:
         # Early stopping
         if not self.debug_mode:
             early_stopping = EarlyStopping(
-                monitor=self.config['logging'].get('monitor', 'val_accuracy'),
+                monitor=self.config['logging'].get('monitor', 'val/accuracy'),
                 mode=self.config['logging'].get('mode', 'max'),
                 patience=self.config['training'].get('early_stopping_patience', 10),
                 min_delta=0.001,

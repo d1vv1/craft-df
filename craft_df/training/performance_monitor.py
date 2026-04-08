@@ -1201,7 +1201,7 @@ class PerformanceCallback(Callback):
         
         # Log to trainer
         if trainer.global_step % self.log_interval == 0:
-            trainer.log_dict({
+            pl_module.log_dict({
                 'perf/gpu_memory_mb': metrics.gpu_memory_allocated,
                 'perf/gpu_utilization': metrics.gpu_utilization,
                 'perf/samples_per_second': metrics.samples_per_second,
@@ -1477,7 +1477,7 @@ class MemoryProfilingCallback(Callback):
                     current_memory = torch.cuda.memory_allocated() / (1024**2)  # MB
                     peak_memory = torch.cuda.max_memory_allocated() / (1024**2)  # MB
                     
-                    trainer.log_dict({
+                    pl_module.log_dict({
                         'memory/current_gpu_mb': current_memory,
                         'memory/peak_gpu_mb': peak_memory,
                     }, on_step=True, on_epoch=False)
@@ -1495,7 +1495,7 @@ class MemoryProfilingCallback(Callback):
                 if 'leak_detection' in analysis:
                     leak_info = analysis['leak_detection']
                     
-                    trainer.log_dict({
+                    pl_module.log_dict({
                         'memory/cpu_trend_mb': leak_info.get('cpu_trend_mb_per_snapshot', 0),
                         'memory/gpu_trend_mb': leak_info.get('gpu_trend_mb_per_snapshot', 0),
                         'memory/cpu_leak_suspected': float(leak_info.get('cpu_leak_suspected', False)),
